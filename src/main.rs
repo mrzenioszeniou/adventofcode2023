@@ -1,7 +1,17 @@
 use anyhow::Context;
 
 fn main() -> anyhow::Result<()> {
-    println!("{}", day1()?);
+    let day = if let Some(day) = std::env::args().nth(1).and_then(|s| s.parse::<u32>().ok()) {
+        day
+    } else {
+        println!("Usage: adventofcode2023 DAY");
+        return Ok(());
+    };
+
+    match day {
+        1 => println!("{}", day1()?),
+        day => println!("Day {day} not unimplemented"),
+    }
 
     Ok(())
 }
