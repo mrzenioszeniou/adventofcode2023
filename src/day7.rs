@@ -12,13 +12,13 @@ pub fn solve() -> anyhow::Result<()> {
 
     hands.sort();
 
-    let part_1 = hands
+    let part_2 = hands
         .iter()
         .enumerate()
         .map(|(ord, hand)| hand.bid * (ord + 1))
         .sum::<usize>();
 
-    println!("Part 1: {part_1}");
+    println!("Part 2: {part_2}");
 
     Ok(())
 }
@@ -70,10 +70,21 @@ impl FromStr for Hand {
 
         let bid = split.next().context("bid not found")?.parse()?;
 
-        let combos = cards.iter().fold(HashMap::new(), |mut acc, e| {
+        let mut combos = cards.iter().fold(HashMap::new(), |mut acc, e| {
             *acc.entry(*e).or_default() += 1;
             acc
         });
+
+        if let Some(n_jokers) = combos.remove(&Card::J) {
+            // Find the non-joker card with the most occurences and highest value
+            let replacement = combos
+                .iter()
+                .max_by_key(|(card, count)| (**count, **card))
+                .map(|(card, _)| *card)
+                .unwrap_or(Card::A); // If all we have is jokers, make them all aces
+
+            *combos.entry(replacement).or_default() += n_jokers;
+        }
 
         let mut combos = combos.into_values().collect::<Vec<_>>();
         combos.sort_by_key(|k| Reverse(*k));
@@ -84,6 +95,7 @@ impl FromStr for Hand {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Card {
+    J,
     N2,
     N3,
     N4,
@@ -93,7 +105,6 @@ pub enum Card {
     N8,
     N9,
     T,
-    J,
     Q,
     K,
     A,
