@@ -8,6 +8,7 @@ mod day6;
 mod day7;
 mod day8;
 mod day9;
+mod manhattan;
 mod utils;
 
 fn main() -> anyhow::Result<()> {
