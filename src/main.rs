@@ -6,6 +6,7 @@ mod day5;
 mod day6;
 mod day7;
 mod day8;
+mod day9;
 mod utils;
 
 fn main() -> anyhow::Result<()> {
@@ -25,6 +26,7 @@ fn main() -> anyhow::Result<()> {
         6 => day6::solve()?,
         7 => day7::solve()?,
         8 => day8::solve()?,
+        9 => day9::solve()?,
         day @ ..=25 => println!("Day {day} not unimplemented"),
         _ => print_usage(),
     }
