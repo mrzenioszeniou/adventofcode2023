@@ -5,6 +5,7 @@ pub fn position_neighbours(
     i_max: usize,
     j_min: usize,
     j_max: usize,
+    diagonal: bool,
 ) -> impl Iterator<Item = (usize, usize)> {
     assert!(i >= i_min);
     assert!(i <= i_max);
@@ -17,14 +18,22 @@ pub fn position_neighbours(
     let right = j.checked_add(1).filter(|j| *j <= j_max);
 
     [
-        up.and_then(|i| left.map(|j| (i, j))),
+        diagonal
+            .then(|| up.and_then(|i| left.map(|j| (i, j))))
+            .flatten(),
         up.map(|i| (i, j)),
-        up.and_then(|i| right.map(|j| (i, j))),
+        diagonal
+            .then(|| up.and_then(|i| right.map(|j| (i, j))))
+            .flatten(),
         left.map(|j| (i, j)),
         right.map(|j| (i, j)),
-        down.and_then(|i| left.map(|j| (i, j))),
+        diagonal
+            .then(|| down.and_then(|i| left.map(|j| (i, j))))
+            .flatten(),
         down.map(|i| (i, j)),
-        down.and_then(|i| right.map(|j| (i, j))),
+        diagonal
+            .then(|| down.and_then(|i| right.map(|j| (i, j))))
+            .flatten(),
     ]
     .into_iter()
     .flatten()

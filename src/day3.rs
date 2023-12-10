@@ -18,9 +18,15 @@ pub fn solve() -> anyhow::Result<()> {
         for j in 0..schematic[i].len() {
             if schematic[i][j].is_numeric() {
                 number_str.push(schematic[i][j]);
-                for (i, j) in
-                    position_neighbours(i, j, 0, schematic.len() - 1, 0, schematic[i].len() - 1)
-                {
+                for (i, j) in position_neighbours(
+                    i,
+                    j,
+                    0,
+                    schematic.len() - 1,
+                    0,
+                    schematic[i].len() - 1,
+                    true,
+                ) {
                     if !schematic[i][j].is_numeric() && schematic[i][j] != '.' {
                         is_part = true;
                     }
