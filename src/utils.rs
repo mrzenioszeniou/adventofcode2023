@@ -29,3 +29,27 @@ pub fn position_neighbours(
     .into_iter()
     .flatten()
 }
+
+pub fn gcd(a: isize, b: isize) -> isize {
+    if b == 0 {
+        return a;
+    }
+
+    gcd(b, a % b)
+}
+
+pub fn lcm(a: usize, b: usize) -> usize {
+    a * b / (gcd(a as isize, b as isize) as usize)
+}
+
+pub fn lcm_many(nums: &[usize]) -> usize {
+    if nums.len() < 2 {
+        panic!("Requested the least common multiple of less than 2 numbers");
+    }
+
+    if nums.len() == 2 {
+        return lcm(nums[0], nums[1]);
+    }
+
+    lcm(nums[0], lcm_many(&nums[1..]))
+}
