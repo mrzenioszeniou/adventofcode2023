@@ -71,7 +71,7 @@ impl Direction {
     }
 }
 
-pub fn neighbours(pos: (isize, isize)) -> Vec<((isize, isize), Direction)> {
+pub fn _neighbours(pos: (isize, isize)) -> Vec<((isize, isize), Direction)> {
     [
         Direction::North,
         Direction::South,
