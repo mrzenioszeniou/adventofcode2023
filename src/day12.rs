@@ -7,19 +7,26 @@ pub fn solve() -> anyhow::Result<()> {
 
     let mut cache = HashMap::new();
 
-    let mut part_1 = 0;
-
-    let mut parsed_input = vec![];
+    let mut part_1_input = vec![];
+    let mut part_2_input = vec![];
 
     for line in input.lines() {
-        parsed_input.append(&mut parse_line(line, 1)?);
+        part_1_input.append(&mut parse_line(line, 1)?);
+        part_2_input.append(&mut parse_line(line, 5)?);
     }
 
-    for (springs, patterns) in parsed_input.iter() {
+    let mut part_1 = 0;
+    let mut part_2 = 0;
+
+    for (springs, patterns) in part_1_input.iter() {
         part_1 += combinations(springs, patterns, &mut cache);
     }
 
-    println!("Part 1: {part_1}\nPart 2: ??");
+    for (springs, patterns) in part_2_input.iter() {
+        part_2 += combinations(springs, patterns, &mut cache);
+    }
+
+    println!("Part 1: {part_1}\nPart 2: {part_2}");
 
     Ok(())
 }
