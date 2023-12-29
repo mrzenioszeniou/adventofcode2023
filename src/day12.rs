@@ -1,22 +1,22 @@
+use std::collections::HashMap;
+
 use anyhow::Context;
 
 pub fn solve() -> anyhow::Result<()> {
     let input = std::fs::read_to_string("res/day12.txt")?;
 
+    let mut cache = HashMap::new();
+
     let mut part_1 = 0;
 
+    let mut parsed_input = vec![];
+
     for line in input.lines() {
-        let mut combos = 0;
+        parsed_input.append(&mut parse_line(line, 1)?);
+    }
 
-        for (springs, patterns) in parse_line(line, 1)? {
-            combos += combinations(&springs, &patterns);
-        }
-
-        if combos == 0 {
-            anyhow::bail!("no combinations found for line {line}");
-        } else {
-            part_1 += combos;
-        }
+    for (springs, patterns) in parsed_input.iter() {
+        part_1 += combinations(springs, patterns, &mut cache);
     }
 
     println!("Part 1: {part_1}\nPart 2: ??");
@@ -24,20 +24,26 @@ pub fn solve() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn combinations(springs: &[Spring], patterns: &[Pattern]) -> usize {
+fn combinations<'a, 'b: 'a>(
+    springs: &'b [Spring],
+    patterns: &'b [Pattern],
+    cache: &mut HashMap<(&'a [Spring], &'a [Pattern]), usize>,
+) -> usize {
     if patterns.is_empty() && springs.is_empty() {
         return 1;
     } else if patterns.is_empty() || springs.is_empty() {
         return 0;
+    } else if let Some(cached) = cache.get(&(springs, patterns)) {
+        return *cached;
     }
 
-    match patterns[0] {
+    let ret = match patterns[0] {
         Pattern::Operational => {
             let mut combos = 0;
 
             for (i, spring) in springs.iter().enumerate() {
                 if matches!(spring, Spring::Operational | Spring::Unknown) {
-                    combos += combinations(&springs[i + 1..], &patterns[1..]);
+                    combos += combinations(&springs[i + 1..], &patterns[1..], cache);
                 } else {
                     break;
                 }
@@ -54,15 +60,19 @@ fn combinations(springs: &[Spring], patterns: &[Pattern]) -> usize {
                 .count();
 
             if count == n {
-                combinations(&springs[n..], &patterns[1..])
+                combinations(&springs[n..], &patterns[1..], cache)
             } else {
                 0
             }
         }
-    }
+    };
+
+    cache.insert((springs, patterns), ret);
+
+    ret
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Spring {
     Operational,
     Broken,
@@ -82,7 +92,7 @@ impl TryFrom<char> for Spring {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Pattern {
     Operational,
     Broken(usize),
