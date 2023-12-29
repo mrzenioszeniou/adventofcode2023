@@ -6,43 +6,11 @@ pub fn solve() -> anyhow::Result<()> {
     let mut part_1 = 0;
 
     for line in input.lines() {
-        let mut split = line.split_whitespace();
-
-        let springs = split
-            .next()
-            .context("no records")?
-            .chars()
-            .map(TryFrom::try_from)
-            .collect::<anyhow::Result<Vec<Spring>>>()?;
-
-        let mut pattern = vec![];
-        for n in split.next().context("no pattern")?.split(',') {
-            let number = n.parse()?;
-            if pattern.is_empty() {
-                pattern.push(Pattern::Broken(number));
-            } else {
-                pattern.push(Pattern::Operational);
-                pattern.push(Pattern::Broken(number));
-            }
-        }
-
         let mut combos = 0;
 
-        // No prefix or suffix
-        combos += combinations(&springs, &pattern);
-
-        // Suffix
-        pattern.push(Pattern::Operational);
-        combos += combinations(&springs, &pattern);
-
-        // Prefix
-        pattern.pop();
-        pattern.insert(0, Pattern::Operational);
-        combos += combinations(&springs, &pattern);
-
-        // Prefix & Suffix
-        pattern.push(Pattern::Operational);
-        combos += combinations(&springs, &pattern);
+        for (springs, patterns) in parse_line(line, 1)? {
+            combos += combinations(&springs, &patterns);
+        }
 
         if combos == 0 {
             anyhow::bail!("no combinations found for line {line}");
@@ -94,7 +62,7 @@ fn combinations(springs: &[Spring], patterns: &[Pattern]) -> usize {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Spring {
     Operational,
     Broken,
@@ -114,8 +82,66 @@ impl TryFrom<char> for Spring {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Pattern {
     Operational,
     Broken(usize),
+}
+
+fn parse_line(line: &str, repeat: usize) -> anyhow::Result<Vec<(Vec<Spring>, Vec<Pattern>)>> {
+    let mut split = line.split_whitespace();
+
+    // Parse
+    let springs = split
+        .next()
+        .context("no records")?
+        .chars()
+        .map(TryFrom::try_from)
+        .collect::<anyhow::Result<Vec<Spring>>>()?;
+
+    let mut patterns = vec![];
+    for n in split.next().context("no pattern")?.split(',') {
+        let number = n.parse()?;
+        if patterns.is_empty() {
+            patterns.push(Pattern::Broken(number));
+        } else {
+            patterns.push(Pattern::Operational);
+            patterns.push(Pattern::Broken(number));
+        }
+    }
+
+    // Repeat
+    let mut repeated_springs = Vec::with_capacity(springs.len() * (repeat + 1));
+    let mut repeated_patterns = Vec::with_capacity(patterns.len() * (repeat + 1));
+    for i in 0..repeat {
+        if i > 0 {
+            repeated_springs.push(Spring::Unknown);
+            repeated_patterns.push(Pattern::Operational);
+        }
+        repeated_springs.extend(springs.clone());
+        repeated_patterns.extend(patterns.clone());
+    }
+
+    let springs = repeated_springs;
+    let mut patterns = repeated_patterns;
+
+    let mut ret = Vec::with_capacity(4);
+
+    // No prefix or suffix
+    ret.push((springs.clone(), patterns.clone()));
+
+    // Suffix
+    patterns.push(Pattern::Operational);
+    ret.push((springs.clone(), patterns.clone()));
+
+    // Prefix
+    patterns.pop();
+    patterns.insert(0, Pattern::Operational);
+    ret.push((springs.clone(), patterns.clone()));
+
+    // Prefix & Suffix
+    patterns.push(Pattern::Operational);
+    ret.push((springs.clone(), patterns.clone()));
+
+    Ok(ret)
 }
