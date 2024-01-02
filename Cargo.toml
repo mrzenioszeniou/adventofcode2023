@@ -9,3 +9,5 @@ edition = "2021"
 anyhow = "1.0.75"
 sscanf = "0.4.1"
 indexmap = "2.1.0"
+palette = { version = "0.7.3", features = ["named"] }
+colored = "2.1.0"
