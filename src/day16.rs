@@ -1,6 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
 
-use crate::manhattan::{step, Direction};
+use crate::manhattan::step;
+use crate::manhattan::Direction;
 
 pub fn solve() -> anyhow::Result<()> {
     let mut tiles: HashMap<(isize, isize), Tile> = HashMap::new();

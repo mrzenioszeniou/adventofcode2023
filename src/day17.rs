@@ -1,7 +1,11 @@
 use anyhow::Context;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::collections::VecDeque;
 
-use crate::manhattan::{a_star, neighbours, Direction};
+use crate::manhattan::a_star;
+use crate::manhattan::neighbours;
+use crate::manhattan::Direction;
 
 pub fn solve() -> anyhow::Result<()> {
     let input = std::fs::read_to_string("res/day17.txt")?;
