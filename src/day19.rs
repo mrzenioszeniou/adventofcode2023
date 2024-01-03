@@ -39,8 +39,84 @@ pub fn solve() -> anyhow::Result<()> {
         }
     }
 
-    println!("Part 1: {part_1}\nPart 2: ??");
+    let mut part_2 = 0;
+    for (name, workflow) in workflows.iter() {
+        for (idx, rule) in workflow.rules.iter().enumerate() {
+            if matches!(rule.outcome, Outcome::Accept) {
+                part_2 += reverse(name, idx, &workflows)?;
+            }
+        }
+    }
+
+    println!("Part 1: {part_1}\nPart 2: {part_2}");
     Ok(())
+}
+
+fn reverse<'a, 'b: 'a>(
+    mut workflow_name: &'a str,
+    mut rule_idx: usize,
+    workflows: &'b HashMap<String, Workflow>,
+) -> anyhow::Result<usize> {
+    // print!("Reversing {workflow_name}[{rule_idx}] |");
+
+    let mut ranges = HashMap::from([
+        ('x', (1, 4000)),
+        ('m', (1, 4000)),
+        ('a', (1, 4000)),
+        ('s', (1, 4000)),
+    ]);
+
+    'workflows: loop {
+        let workflow = workflows
+            .get(workflow_name)
+            .context("can't find workflow")?;
+
+        for idx in 0..=rule_idx {
+            if let Some(Condition { cat, cmp, val }) = workflow.rules[idx].condition.as_ref() {
+                let range = ranges.get_mut(cat).context("no range found")?;
+
+                match cmp {
+                    std::cmp::Ordering::Less => {
+                        if idx == rule_idx {
+                            range.1 = range.1.min(*val - 1);
+                        } else {
+                            range.0 = range.0.max(*val);
+                        }
+                    }
+                    std::cmp::Ordering::Greater => {
+                        if idx == rule_idx {
+                            range.0 = range.0.max(*val + 1)
+                        } else {
+                            range.1 = range.1.min(*val);
+                        }
+                    }
+                    std::cmp::Ordering::Equal => unreachable!(),
+                }
+            }
+        }
+
+        // if we're at the topmost workflow we're done
+        if workflow_name == "in" {
+            let count = ranges.values().map(|(min, max)| max - min + 1).product();
+            // println!("{count} combos <- {ranges:?}");
+            return Ok(count);
+        }
+
+        // otherwise we need the rule that sent us here
+        for (name, workflow) in workflows.iter() {
+            for i in 0..workflow.rules.len() {
+                if let Outcome::Goto(ref target) = workflow.rules[i].outcome {
+                    if target == workflow_name {
+                        workflow_name = name.as_str();
+                        rule_idx = i;
+                        continue 'workflows;
+                    }
+                }
+            }
+        }
+
+        unreachable!();
+    }
 }
 
 fn process_part(
@@ -96,7 +172,7 @@ struct Condition {
     val: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum Outcome {
     Accept,
     Reject,
