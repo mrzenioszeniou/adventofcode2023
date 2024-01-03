@@ -1,26 +1,18 @@
+use crate::manhattan::{polygon_area, step_many, Direction};
 use anyhow::Context;
-use colored::Colorize;
-use palette::Srgb;
-use std::{
-    collections::{BTreeSet, HashMap, HashSet},
-    str::FromStr,
-};
-
-use crate::manhattan::{neighbours, step, Direction};
 
 pub fn solve() -> anyhow::Result<()> {
     let input = std::fs::read_to_string("res/day18.txt")?;
 
-    let mut plan = HashMap::from([((0, 0), palette::named::WHITE)]);
-    let mut curr = (0, 0);
-    let mut min_i = 0;
-    let mut min_j = 0;
-    let mut max_i = 0;
-    let mut max_j = 0;
+    let mut points_1 = vec![];
+    let mut curr_1 = (0, 0);
+    let mut points_2 = vec![];
+    let mut curr_2 = (0, 0);
+
     for line in input.lines() {
         let mut split = line.split_whitespace();
 
-        let dir = match split.next().context("no direction found")? {
+        let dir_1 = match split.next().context("no direction found")? {
             "U" => Direction::North,
             "R" => Direction::East,
             "D" => Direction::South,
@@ -28,62 +20,34 @@ pub fn solve() -> anyhow::Result<()> {
             s => anyhow::bail!("unexpected direction '{s}' found"),
         };
 
-        let steps = split.next().context("no steps found")?.parse::<usize>()?;
+        let steps_1 = split.next().context("no steps found")?.parse::<usize>()?;
 
-        let color = Srgb::from_str(
-            split
-                .next()
-                .context("no color found")?
-                .strip_prefix('(')
-                .and_then(|s| s.strip_suffix(')'))
-                .context("unexpected color pattern")?,
-        )?;
+        let hex = split
+            .next()
+            .context("no color found")?
+            .strip_prefix("(#")
+            .and_then(|s| s.strip_suffix(')'))
+            .context("unexpected color pattern")?;
 
-        for _ in 0..steps {
-            curr = step(curr, dir);
-            max_i = max_i.max(curr.0);
-            max_j = max_j.max(curr.1);
-            min_i = min_i.min(curr.0);
-            min_j = min_j.min(curr.1);
-            plan.insert(curr, color);
-        }
+        let steps_2 = usize::from_str_radix(&hex[0..5], 16)?;
+        let dir_2 = match &hex[5..] {
+            "0" => Direction::East,
+            "1" => Direction::South,
+            "2" => Direction::West,
+            "3" => Direction::North,
+            s => anyhow::bail!("unexpected hex direction '{s}'"),
+        };
+
+        curr_2 = step_many(curr_2, dir_2, steps_2);
+        points_2.push(curr_2);
+
+        curr_1 = step_many(curr_1, dir_1, steps_1);
+        points_1.push(curr_1);
     }
 
-    for i in min_i..=max_i {
-        for j in min_j..=max_j {
-            if let Some(color) = plan.get(&(i, j)) {
-                let s = if i == 0 && j == 0 {
-                    "@".white().on_red()
-                } else {
-                    "#".truecolor(color.red, color.green, color.blue)
-                        .on_bright_black()
-                };
-                print!("{s}");
-            } else {
-                print!(".");
-            }
-        }
-        println!();
-    }
+    let part_1 = polygon_area(points_1.into_iter());
+    let part_2 = polygon_area(points_2.into_iter());
 
-    let mut part_1 = plan.len();
-
-    let mut visited = HashSet::new();
-    let mut to_visit = BTreeSet::from([(1, 1)]); // input-specific
-
-    while let Some(pos) = to_visit.pop_last() {
-        visited.insert(pos);
-
-        if !plan.contains_key(&pos) {
-            part_1 += 1;
-            for (neighbour, _) in neighbours(pos) {
-                if !visited.contains(&neighbour) {
-                    to_visit.insert(neighbour);
-                }
-            }
-        }
-    }
-
-    println!("Part 1: {part_1}\nPart 2: ??");
+    println!("Part 1: {part_1}\nPart 2: {part_2}");
     Ok(())
 }

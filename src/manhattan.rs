@@ -102,6 +102,14 @@ pub fn step(pos: (isize, isize), dir: Direction) -> (isize, isize) {
     (pos.0 + step.0, pos.1 + step.1)
 }
 
+pub fn step_many(pos: (isize, isize), dir: Direction, steps: usize) -> (isize, isize) {
+    let step = dir.forward_step();
+    (
+        pos.0 + step.0 * steps as isize,
+        pos.1 + step.1 * steps as isize,
+    )
+}
+
 /// * `start`: initial state
 /// * `finished`: given a state, returns `true` if it satisfies goal
 /// * `nexts`: given a state, returns valid next states and the cost of transitions as a `usize`
@@ -150,4 +158,39 @@ where
     }
 
     None
+}
+
+/// Calculates the area of a simple polygon (including perimeter) given its vertices
+pub fn polygon_area(points: impl Iterator<Item = (isize, isize)>) -> usize {
+    let mut first = None;
+    let mut prev: Option<(isize, isize)> = None;
+    let mut area = 0;
+    let mut perimeter = 0;
+
+    let mut handle_pair = |curr: (isize, isize), prev: (isize, isize)| {
+        perimeter += (curr.0 - prev.0).unsigned_abs() + (curr.1 - prev.1).unsigned_abs();
+        // https://en.wikipedia.org/wiki/Shoelace_formula
+        area += (prev.0 + curr.0) * (curr.1 - prev.1);
+    };
+
+    for point in points {
+        if let Some(prev) = prev {
+            handle_pair(point, prev);
+        } else {
+            first = Some(point);
+        }
+
+        prev = Some(point);
+    }
+
+    if let Some(last) = prev {
+        if let Some(first) = first {
+            handle_pair(first, last);
+        }
+    }
+
+    area /= 2;
+
+    // https://en.wikipedia.org/wiki/Pick's_theorem
+    area.unsigned_abs() + perimeter / 2 + 1
 }
