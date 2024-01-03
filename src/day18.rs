@@ -1,4 +1,6 @@
-use crate::manhattan::{polygon_area, step_many, Direction};
+use crate::manhattan::polygon_area;
+use crate::manhattan::step_many;
+use crate::manhattan::Direction;
 use anyhow::Context;
 
 pub fn solve() -> anyhow::Result<()> {
