@@ -64,7 +64,7 @@ impl Direction {
         }
     }
 
-    pub fn forward_step(&self) -> (isize, isize) {
+    pub fn forward_step(&self) -> Position {
         match self {
             Self::North => (-1, 0),
             Self::South => (1, 0),
@@ -74,7 +74,7 @@ impl Direction {
     }
 }
 
-pub fn neighbours(pos: (isize, isize)) -> Vec<((isize, isize), Direction)> {
+pub fn neighbours(pos: Position) -> Vec<(Position, Direction)> {
     [
         Direction::North,
         Direction::South,
@@ -97,12 +97,12 @@ pub fn neighbours(pos: (isize, isize)) -> Vec<((isize, isize), Direction)> {
 /// |
 /// ⌄
 /// ```
-pub fn step(pos: (isize, isize), dir: Direction) -> (isize, isize) {
+pub fn step(pos: Position, dir: Direction) -> Position {
     let step = dir.forward_step();
     (pos.0 + step.0, pos.1 + step.1)
 }
 
-pub fn step_many(pos: (isize, isize), dir: Direction, steps: usize) -> (isize, isize) {
+pub fn step_many(pos: Position, dir: Direction, steps: usize) -> Position {
     let step = dir.forward_step();
     (
         pos.0 + step.0 * steps as isize,
@@ -161,13 +161,13 @@ where
 }
 
 /// Calculates the area of a simple polygon (including perimeter) given its vertices
-pub fn polygon_area(points: impl Iterator<Item = (isize, isize)>) -> usize {
+pub fn polygon_area(points: impl Iterator<Item = Position>) -> usize {
     let mut first = None;
-    let mut prev: Option<(isize, isize)> = None;
+    let mut prev: Option<Position> = None;
     let mut area = 0;
     let mut perimeter = 0;
 
-    let mut handle_pair = |curr: (isize, isize), prev: (isize, isize)| {
+    let mut handle_pair = |curr: Position, prev: Position| {
         perimeter += (curr.0 - prev.0).unsigned_abs() + (curr.1 - prev.1).unsigned_abs();
         // https://en.wikipedia.org/wiki/Shoelace_formula
         area += (prev.0 + curr.0) * (curr.1 - prev.1);
@@ -194,3 +194,5 @@ pub fn polygon_area(points: impl Iterator<Item = (isize, isize)>) -> usize {
     // https://en.wikipedia.org/wiki/Pick's_theorem
     area.unsigned_abs() + perimeter / 2 + 1
 }
+
+pub type Position = (isize, isize);
