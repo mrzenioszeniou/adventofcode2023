@@ -1,8 +1,9 @@
+use crate::utils::lcm_many;
 use anyhow::Context;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::fmt::Debug;
-// use std::fmt::Write;
 use std::hash::Hash;
 use std::str::FromStr;
 
@@ -34,38 +35,14 @@ pub fn solve() -> anyhow::Result<()> {
     let mut low_pulses = 0;
     let mut high_pulses = 0;
 
-    let mut part_2 = 0;
-
-    // print!("     presses");
-    // for (id, module) in modules.iter() {
-    //     print!(" | ");
-    //     let state = module.to_string();
-    //     let max = state.len().max(id.len());
-    //     let mut id = id.clone();
-    //     for _ in id.len()..max {
-    //         id.push(' ');
-    //     }
-
-    //     print!("{id}");
-    // }
-    // println!();
+    let mut nand_freqs = HashMap::from([
+        ("sk".to_string(), None),
+        ("sv".to_string(), None),
+        ("dr".to_string(), None),
+        ("qz".to_string(), None),
+    ]);
 
     'outer: for i in 0.. {
-        // let mut line = format!("{i:12}");
-        // for (id, module) in modules.iter() {
-        //     line.push_str(" | ");
-
-        //     let mut state = module.to_string();
-        //     let max = state.len().max(id.len());
-
-        //     for _ in state.len()..max {
-        //         state.push(' ');
-        //     }
-
-        //     write!(line, "{state}")?;
-        // }
-        // println!("{line}");
-
         // send button pulse
         bus.push_back(Pulse {
             from: "button".to_string(),
@@ -75,8 +52,6 @@ pub fn solve() -> anyhow::Result<()> {
 
         // handle all subsequent pulses
         while let Some(pulse) = bus.pop_front() {
-            // println!("{pulse:?}");
-
             if i < 1_000 {
                 match pulse.value {
                     PulseValue::Low => low_pulses += 1,
@@ -84,9 +59,13 @@ pub fn solve() -> anyhow::Result<()> {
                 }
             }
 
-            if pulse.to == "rx" && matches!(pulse.value, PulseValue::Low) {
-                part_2 = i + 1;
-                break 'outer;
+            if matches!(pulse.value, PulseValue::Low) && nand_freqs.get(&pulse.from) == Some(&None)
+            {
+                println!("{} LOW after {} presses", pulse.from, i + 1);
+                nand_freqs.insert(pulse.from.clone(), Some(i + 1));
+                if nand_freqs.values().all(|nand| nand.is_some()) {
+                    break 'outer;
+                }
             }
 
             if let Some(dest_module) = modules.get_mut(&pulse.to) {
@@ -96,6 +75,9 @@ pub fn solve() -> anyhow::Result<()> {
     }
 
     let part_1 = low_pulses * high_pulses;
+
+    let freqs = nand_freqs.values().filter_map(|v| *v).collect::<Vec<_>>();
+    let part_2 = lcm_many(&freqs);
 
     println!("Part 1: {part_1}\nPart 2: {part_2}");
     Ok(())
@@ -191,11 +173,6 @@ impl Module {
 impl FromStr for Module {
     type Err = anyhow::Error;
 
-    // broadcaster -> a
-    // %a -> inv, con
-    // &inv -> b
-    // %b -> con
-    // &con -> output
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut split = s.split(" -> ");
 
@@ -231,12 +208,7 @@ impl std::fmt::Display for Module {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::FlipFlop { value, .. } => write!(f, "{value}")?,
-            Self::Conjuction { values, .. } => {
-                for value in values.values() {
-                    write!(f, "{value}")?;
-                }
-            }
-            Self::Broadcast { .. } => {}
+            Self::Conjuction { .. } | Self::Broadcast { .. } => {}
         }
 
         Ok(())
@@ -254,6 +226,15 @@ struct Pulse {
 enum PulseValue {
     Low,
     High,
+}
+
+impl From<&PulseValue> for usize {
+    fn from(value: &PulseValue) -> Self {
+        match value {
+            PulseValue::Low => 0,
+            PulseValue::High => 1,
+        }
+    }
 }
 
 impl From<bool> for PulseValue {
